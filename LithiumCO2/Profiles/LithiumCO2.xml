@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<APIConfiguration Source="DolphinAPIConfigurator 1.1.0.20">
+  <IOConfig IsPWM0="false" IsPWM1="false" IsPWM2="false" IsSPI="false" IsUART0="false" IsUART1="false" IsVON0="false" IsVON1="false" IsWXTAL="false">
+    <SCSEDIO0 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <SCLKDIO1 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <WSDADIO2 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <RSDADIO3 IsDigital="true" IsAnalog="false" Direction="Out" PullEn="None" Pull="PullUp" InitValue="0" />
+    <ADIO0 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO1 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO2 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO3 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO4 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO5 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO6 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <ADIO7 IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <WXIDIO IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+    <WXODIO IsDigital="true" IsAnalog="false" Direction="In" PullEn="Pull" Pull="PullUp" InitValue="0" />
+  </IOConfig>
+  <APIConfig>
+    <AppType>LinePower</AppType>
+    <Filter>None</Filter>
+    <FilterCount>1</FilterCount>
+    <Ige0Trigger>Disabled</Ige0Trigger>
+    <Ige1Trigger>Disabled</Ige1Trigger>
+    <Ige2Trigger>Disabled</Ige2Trigger>
+    <IsReman>Disabled</IsReman>
+    <MailBoxAddr>29952</MailBoxAddr>
+    <MailBoxCount>10</MailBoxCount>
+    <MaturityTime>100</MaturityTime>
+    <RadioBufferCount>10</RadioBufferCount>
+    <RemanBufferSize>20</RemanBufferSize>
+    <RemanCodeAddr>32256</RemanCodeAddr>
+    <RemanFunc>63</RemanFunc>
+    <RemanManufacturer>2047</RemanManufacturer>
+    <RemanOrg>255</RemanOrg>
+    <RemanType>127</RemanType>
+    <Repeater>Disabled</Repeater>
+    <SpiClock>3</SpiClock>
+    <SpiMode>Auto</SpiMode>
+    <SpiPhase>FirstEdge</SpiPhase>
+    <SpiPolarity>ActiveLow</SpiPolarity>
+    <Timer1Active>64</Timer1Active>
+    <Timer1Mode>Disabled</Timer1Mode>
+    <Timer1Periode>64</Timer1Periode>
+    <Timer1Postscaler>None</Timer1Postscaler>
+    <UartBaudRate>BAUD_9600</UartBaudRate>
+    <UartRxSize>34</UartRxSize>
+    <UartTxSize>34</UartTxSize>
+  </APIConfig>
+</APIConfiguration>

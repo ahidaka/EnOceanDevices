@@ -1,0 +1,80 @@
+C51 COMPILER V9.05   RAM0                                                                  08/07/2014 16:21:17 PAGE 1   
+
+
+C51 COMPILER V9.05, COMPILATION OF MODULE RAM0
+OBJECT MODULE PLACED IN .\Output\ram0.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ram0.c LARGE OPTIMIZE(9,SPEED) BROWSE MDU_R515 DEFINE(RELEASE) DEBUG OBJECT
+                    -EXTEND PRINT(.\Output\ram0.lst) OBJECT(.\Output\ram0.obj)
+
+line level    source
+
+   1          #include "ram0.h"
+   2          #include "DolphinSTM.h"
+   3          
+   4          // ------------------------------------------------------------------
+   5          // global
+   6          tRam0 aRam0;
+   7          
+   8          // ------------------------------------------------------------------
+   9          // Function:    ram0Init
+  10          // Parameters:  none
+  11          //              
+  12          //              
+  13          // Returns:     nothing
+  14          // Description: initializes aRam0 structure to default values  
+  15          //              
+  16          // ------------------------------------------------------------------
+  17          void ram0Init(void)  {
+  18   1      
+  19   1        aRam0.u8State = S_IDLE;
+  20   1        aRam0.u16MinCO2Level = 1000;
+  21   1        aRam0.u16WakeupCnt = 0;
+  22   1        aRam0.u8ChargeLevel = 0;
+  23   1      
+  24   1        aRam0.u16WakeInterval = unigcfg.u16WakeCycle; 
+  25   1        aRam0.u8CycleMin = unigcfg.u8TCycleMin;
+  26   1        aRam0.u8CycleMax = unigcfg.u8TCycleMax;
+  27   1        aRam0.u8LastVOFF = 0;
+  28   1      }
+  29          // ------------------------------------------------------------------
+  30          // Function:    ram0Read
+  31          // Parameters:  none
+  32          //              
+  33          //              
+  34          // Returns:     nothing
+  35          // Description: stores aRam0 structure in RAM0 
+  36          //              
+  37          // ------------------------------------------------------------------
+  38          void ram0Read(void)  {
+  39   1        mem_readRAM0((uint8 *)&aRam0, 0, sizeof(aRam0)); 
+  40   1      }
+  41          // ------------------------------------------------------------------
+  42          // Function:    ram0Write
+  43          // Parameters:  none
+  44          //              
+  45          //              
+  46          // Returns:     nothing
+  47          // Description: restores aRam0 structure from RAM0  
+  48          //              
+  49          // ------------------------------------------------------------------
+  50          void ram0Write(void)  {
+  51   1        mem_writeRAM0((uint8 *)&aRam0, 0, sizeof(aRam0)); 
+  52   1      }
+  53          
+  54          
+C51 COMPILER V9.05   RAM0                                                                  08/07/2014 16:21:17 PAGE 2   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     92    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     11    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

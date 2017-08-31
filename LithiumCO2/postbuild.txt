@@ -1,0 +1,32 @@
+################################################################################################
+# Lines with # at begin are ignored                                                            #
+#                                                                                              #
+# Scripting commands:                                                                          #
+#    setbist Calculate and set PrgSize in CfgArea and BIST CRC in PrgArea                      #
+#    setversion Get version info from PrgArea.hex and update CfgArea                           #
+#    writecfg Write data to CfgArea                                                            #
+#    fillcfg Fill CfgArea with specified value                                                 #
+#                                                                                              #
+# Remarks:                                                                                     #
+#    Scripting commands are not case sensitive.                                                #
+#    One command per line is allowed                                                           #
+#                                                                                              #
+#                                                                                              #
+# Command options:                                                                             #
+#    setbist [first_data_obj]     if [first_data_obj] is specified, then -fmap must be set.    #
+#    fillcfg addr count value                                                                  #
+#    writecfg addr value [,value]                                                              #
+#                                                                                              #
+# Sample postbuild.txt:                                                                        #
+#    setBist                                                                                   #
+#    setVersion                                                                                #
+#    fillCfg 0x70, 3, 0xFF                                                                     #
+#    writeCfg 0x80,'A','B',0x12,12                                                             #
+#                                                                                              #
+# For further details:                                                                         #
+#    about the CFG area please consult the API manual.                                         #
+#    about the EOPX postbuild utility consult the DolphinStudio help                           #
+################################################################################################
+
+setBist
+setVersion

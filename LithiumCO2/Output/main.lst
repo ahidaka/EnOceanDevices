@@ -1,0 +1,805 @@
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 1   
+
+
+C51 COMPILER V9.05, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Output\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(9,SPEED) BROWSE MDU_R515 DEFINE(RELEASE) DEBUG OBJECT
+                    -EXTEND PRINT(.\Output\main.lst) OBJECT(.\Output\main.obj)
+
+line level    source
+
+   1          #include "EO3100I_API.h"
+   2          #include "EO3100I_CFG.h"
+   3          //#include "EO3100I_API_DBG.h"
+   4          #include "DolphinSTM.h"
+   5          #include <stdio.h>
+   6          #include <string.h>
+   7          #include "ram0.h"
+   8          #include "LRNtelegram.h"
+   9          
+  10          //#define DEBUG 1 // for EOP350 test
+  11          code uint8 VERSION_APP[] = {0xE0,'V','E','R','S','I','O','N',
+  12                                      0,0,0,8,                                    // change APP Version here  
+  13                                      'A',
+  14                                                                  'L','i','t','h','i','u','m','C','O','2',
+  15                                      0x00,0xE0};
+  16          
+  17          // defines for DEBUG and function control
+  18          #define TX_OUTPUT 0
+  19          
+  20          //#define CO2TIMEOUT 2000 //--NG
+  21          //#define CO2TIMEOUT 4000 //--NG
+  22          #define CO2TIMEOUT  50000 //-- OK
+  23          //#define CO2TIMEOUT  20000 -- NG
+  24          //#define DEBUG 1
+  25          //#define SEND_TELEGRAM 1
+  26          //#define LRN_DEBUG 1
+  27          #define DEBUG_CALIB_TELEGRAM 1
+  28          
+  29          // I/O Configuration overview
+  30          //
+  31          //      Pin :  Interface      Direction   Pull   InitValue    Interrupt
+  32          // SCSEDIO0 :  Digital I/O    In          Up     0            No     
+  33          // SCLKDIO1 :  Digital I/O    In          Up     0            No     
+  34          // WSDADIO2 :  Digital I/O    In          Up     0            No     
+  35          // RSDADIO3 :  Digital I/O    In          Up     0            No     
+  36          // ADIO0    :  Digital I/O    In          Up     0            No     
+  37          // ADIO1    :  Digital I/O    In          Up     0            No     
+  38          // ADIO2    :  Digital I/O    In          Up     0            No     
+  39          // ADIO3    :  Digital I/O    Out         None   0            No     
+  40          // ADIO4    :  Digital I/O    In          Up     0            No     
+  41          // ADIO5    :  Digital I/O    In          Up     0            No     
+  42          // ADIO6    :  UART           In          Up     0            No     
+  43          // ADIO7    :  UART           Out         None   0            No     
+  44          // WXIDIO   :  Digital I/O    In          None   0            No     
+  45          // WXODIO   :  Von            Out         None   0            No     
+  46          // WAKE0    :  Digital I/O    In          None   0            No     
+  47          // WAKE1    :  Digital I/O    In          None   0            No    
+  48          
+  49          //*********************IO PARAM******************************
+  50          uint8 code io_param_sensorOff[]  = { 
+  51             0x07,   //IDX_GPIO_CONF
+  52             0x00,   //IDX_GPIO0_CONF
+  53             0x0F,   //IDX_GPIO0_PULL_CONF
+  54             0x00,   //IDX_GPIO0_DIR
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 2   
+
+  55             0x00,   //IDX_GPIO1_AN
+  56             0x00,   //IDX_GPIO1_CONF0
+  57             0xC0,   //IDX_GPIO1_CONF1
+  58             0x03,   //IDX_GPIO1_DIG_CONF 
+  59             0x88,   //IDX_GPIO1_DIR
+  60             0x77,   //IDX_GPIO1_PULL
+  61             0x02,   //IDX_GPIO2_CONF     //WXODIO_VON//
+  62             0x03,   //IDX_GPIO2_DIR
+  63             0x00,   //IDX_GPIO0
+  64             0x00,   //IDX_GPIO1
+  65             0x00,   //IDX_GPIO2
+  66          };
+  67          
+  68          uint8 code io_param_sensorOn[]  = { 
+  69             0x07,   //IDX_GPIO_CONF
+  70             0x00,   //IDX_GPIO0_CONF
+  71             0x0F,   //IDX_GPIO0_PULL_CONF
+  72             0x00,   //IDX_GPIO0_DIR
+  73             0x00,   //IDX_GPIO1_AN
+  74             0x00,   //IDX_GPIO1_CONF0
+  75             0xC0,   //IDX_GPIO1_CONF1
+  76             0x03,   //IDX_GPIO1_DIG_CONF 
+  77             0x88,   //IDX_GPIO1_DIR
+  78             0x77,   //IDX_GPIO1_PULL
+  79             0x02,   //IDX_GPIO2_CONF     //WXODIO_VON//
+  80             0x03,   //IDX_GPIO2_DIR
+  81             0x00,   //IDX_GPIO0
+  82             0x00,   //IDX_GPIO1
+  83             0x01,   //IDX_GPIO2
+  84          };
+  85          
+  86          uint8 code io_param_sensorOff_VOFF[]  = { 
+  87             0x07,   //IDX_GPIO_CONF
+  88             0x00,   //IDX_GPIO0_CONF
+  89             0x0F,   //IDX_GPIO0_PULL_CONF
+  90             0x00,   //IDX_GPIO0_DIR
+  91             0x00,   //IDX_GPIO1_AN
+  92             0x00,   //IDX_GPIO1_CONF0
+  93             0xC0,   //IDX_GPIO1_CONF1
+  94             0x03,   //IDX_GPIO1_DIG_CONF 
+  95             0x88,   //IDX_GPIO1_DIR
+  96             0x77,   //IDX_GPIO1_PULL
+  97             0x00,   //IDX_GPIO2_CONF //WXOD_IO-OFF//
+  98             0x03,   //IDX_GPIO2_DIR
+  99             0x00,   //IDX_GPIO0
+ 100             0x00,   //IDX_GPIO1
+ 101             0x00,   //IDX_GPIO2
+ 102          };
+ 103          
+ 104          uint8 code io_param_sensorOn_VOFF[]  = { 
+ 105             0x07,   //IDX_GPIO_CONF
+ 106             0x00,   //IDX_GPIO0_CONF
+ 107             0x0F,   //IDX_GPIO0_PULL_CONF
+ 108             0x00,   //IDX_GPIO0_DIR
+ 109             0x00,   //IDX_GPIO1_AN
+ 110             0x00,   //IDX_GPIO1_CONF0
+ 111             0xC0,   //IDX_GPIO1_CONF1
+ 112             0x03,   //IDX_GPIO1_DIG_CONF 
+ 113             0x88,   //IDX_GPIO1_DIR
+ 114             0x77,   //IDX_GPIO1_PULL
+ 115             0x00,   //IDX_GPIO2_CONF //WXOD_IO-OFF//
+ 116             0x03,   //IDX_GPIO2_DIR
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 3   
+
+ 117             0x00,   //IDX_GPIO0
+ 118             0x00,   //IDX_GPIO1
+ 119             0x01,   //IDX_GPIO2
+ 120          };
+ 121          
+ 122          // ------------------------------------------------------------------
+ 123          //#define WAKE_INTERVAL        600ul // s                              // wakeup configuration
+ 124          //#define WAKE_INTERVAL        60ul //=>4m12s s                              // wakeup configuration
+ 125          //#define WAKE_INTERVAL        30ul //=>3m43s s                              // wakeup configuration
+ 126          
+ 127          #ifdef DEBUG
+              #define WAKE_INTERVAL        15ul                                   // wakeup configuration (debug)
+              #else
+ 130          #define WAKE_INTERVAL        600ul                                  // wakeup configuration 10 minutes (de
+             -fault)
+ 131          //#define WAKE_INTERVAL        15ul                                                                       // for Test
+ 132          #endif
+ 133          
+ 134          #ifdef DEBUG
+              #define CALIB_COUNT          6    // every 6 times, debug 
+              #else
+ 137          #define CALIB_COUNT          (7ul*(24ul*60ul*60ul)/WAKE_INTERVAL)   // 1 week, calibration interval config
+             -uration 
+ 138          #endif
+ 139          
+ 140          #define DEFAULT_CALIBRATION_CLEAN_LEVEL 450                    // clean air assumes as 450 ppm
+ 141          
+ 142          #define CALIBRATION_BUTTON_SEC 2 // 2 sec
+ 143          
+ 144          #define SENSOR_TIMEOUT       3 // s                            // sensor timeout (max time from power on t
+             -o first result)
+ 145          
+ 146          #define VALID_CHARGE_LEVEL       ((uint8)(1))                      // 0.5% -- default Valid ChargeLevel
+ 147          
+ 148          // ------------------------------------------------------------------
+ 149          #define ALLOW_LRN_BTN        (WAKE1_PIN_CFG_WAKE_FLAG)
+ 150          #define ALLOW_SENSOR         (WAKE0_PIN_CFG_WAKE_FLAG)
+ 151          
+ 152          #define WAKE_SENSOR          (WAKE_PIN0_RESET)
+ 153          #define WAKE_LRN             (WAKE_PIN1_RESET)
+ 154          // ------------------------------------------------------------------
+ 155          #define sensorPwrOn()      (io_setDigital(WXID_IO, 1))         // power up sensor
+ 156          #define sensorPwrOff()     (io_setDigital(WXID_IO, 0))         // power down sensor
+ 157          
+ 158          #define ADJUST_TIMER(p) \
+ 159                  do { \
+ 160                          pwr_enableXTAL(DEFAULT_DELAY); \
+ 161                          radio_init_mod(CFG_ALL); \
+ 162                          pwr_selectXTAL(); \
+ 163                  } while(0)
+ 164          // ------------------------------------------------------------------
+ 165          // prototypes
+ 166          void measureTemperature(sint16 *s16value);
+ 167          uint8 scaleTemperature(sint16 s16value); 
+ 168          void measureVDD(uint16 *u16Value);
+ 169          void measureChargeLevel(uint8 *u8Level);
+ 170          void DeepSleep(uint16 u16Sleeptime, uint8 u8WakeSrc);
+ 171          void parse_uart(uint16 *u16Value);
+ 172          
+ 173          //
+ 174          /****************************Variables***********************************/
+ 175          //
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 4   
+
+ 176          DolphinSTM_CFG          code    unigcfg _at_ CFG_ADDR;
+ 177          //
+ 178          //
+ 179          //
+ 180          void main()
+ 181          {
+ 182   1              //! Reset reason
+ 183   1              RESET_TYPE data u8ResetSrc;
+ 184   1              TEL_RADIO_TYPE2                 rTel2;
+ 185   1              uint8 u8PinState;
+ 186   1              uint8 u8ChargeLevel;         // 0..200 (0..100%)
+ 187   1              sint16 s16Temp;
+ 188   1              uint16 u16CO2value;
+ 189   1              uint8 u8Len, u8Msg[40];
+ 190   1              uint16 WakeInterval;
+ 191   1              uint16 CalibCount;
+ 192   1              uint16 CalibCleanLevel;
+ 193   1              uint8  ValidChargeLevel;
+ 194   1              uint8  ControlWXODIO;
+ 195   1              uint8  ForceCalibration;
+ 196   1      
+ 197   1              pwr_getSystemReset(&u8ResetSrc);
+ 198   1      
+ 199   1              // Control WXIDIO_OFF condition
+ 200   1              ControlWXODIO = unigcfg.u8AD_0_Threshold; //0: always OFF, 1: Depend on Charge Level, Other:always ON
+ 201   1      
+ 202   1              // need initial settings ASAP //
+ 203   1              switch(u8ResetSrc)
+ 204   1              {
+ 205   2                      case WAKE_LRN:
+ 206   2                      case WATCHDOG_RESET:
+ 207   2                              io_getDigital(WAKE_1, &u8PinState);     // Get WAKE_1 pin state here!
+ 208   2                              ram0Read();
+ 209   2                              io_init(ControlWXODIO == 0 || aRam0.u8LastVOFF ? io_param_sensorOff_VOFF : io_param_sensorOff);
+ 210   2                              mainInit();
+ 211   2                              break;
+ 212   2      
+ 213   2                      case VDD_RESET:
+ 214   2                      case PIN_RESET:
+ 215   2                              ram0Init();
+ 216   2                              ram0Write();
+ 217   2                              io_init(ControlWXODIO == 0 ? io_param_sensorOff_VOFF : io_param_sensorOff);
+ 218   2                              mainInit();
+ 219   2                              break;
+ 220   2      
+ 221   2                      case WAKE_SENSOR:                                                 // WAKE0 -> UART activity
+ 222   2                              ram0Read();
+ 223   2                              io_init(ControlWXODIO == 0 || aRam0.u8LastVOFF ? io_param_sensorOn_VOFF : io_param_sensorOn);
+ 224   2                              mainInit();                                                   // important that uart_init hits the stop
+             - bit of the first char (0x20)
+ 225   2                              break;
+ 226   2              }
+ 227   1      
+ 228   1              // Wakeup interval
+ 229   1              if (unigcfg.u16WakeCycle == FLASH_ERASED_16)
+ 230   1              {
+ 231   2                      WakeInterval = WAKE_INTERVAL;   
+ 232   2              }
+ 233   1              else
+ 234   1              {
+ 235   2                      WakeInterval = unigcfg.u16WakeCycle;
+ 236   2                      if (WakeInterval == 0)
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 5   
+
+ 237   2                              WakeInterval = WAKE_INTERVAL;
+ 238   2              }
+ 239   1      
+ 240   1              // CalibCount
+ 241   1              if (unigcfg.u8TCycleMin == FLASH_ERASED_8 && unigcfg.u8TCycleMax == FLASH_ERASED_8)
+ 242   1              {
+ 243   2                      CalibCount = CALIB_COUNT;
+ 244   2              }
+ 245   1              else
+ 246   1              {
+ 247   2                      CalibCount = unigcfg.u8TCycleMin * unigcfg.u8TCycleMax;
+ 248   2              }
+ 249   1      
+ 250   1              // Compare Charge Level
+ 251   1              if (unigcfg.u8AD_2_Threshold == FLASH_ERASED_8)
+ 252   1              {
+ 253   2                      ValidChargeLevel = VALID_CHARGE_LEVEL;  
+ 254   2              }
+ 255   1              else
+ 256   1              {
+ 257   2                      ValidChargeLevel = unigcfg.u8AD_2_Threshold;
+ 258   2              }
+ 259   1      
+ 260   1              // Compare Calibration Clean Level
+ 261   1              if (unigcfg.u8AD_1_Threshold == FLASH_ERASED_8)
+ 262   1              {
+ 263   2                      CalibCleanLevel = DEFAULT_CALIBRATION_CLEAN_LEVEL;      
+ 264   2              }
+ 265   1              else
+ 266   1              {
+ 267   2                      CalibCleanLevel = unigcfg.u8AD_1_Threshold * 10;
+ 268   2              }
+ 269   1      
+ 270   1      #ifdef DEBUG2
+                      u8Len = sprintf(u8Msg, "W:%u C:%u V:%u\r\n", WakeInterval, CalibCount, (uint16)ValidChargeLevel);
+              #endif
+ 273   1      
+ 274   1              switch(u8ResetSrc)
+ 275   1              {
+ 276   2                      case WAKE_LRN:                                                    // WAKE1 -> LRN button
+ 277   2      #ifdef LRN_DEBUG
+                                      u8Len = sprintf(u8Msg, "WAKE_LRN PinState=%u\r\n", (uint16) u8PinState);
+                                      uart_sendBuffer(u8Msg, u8Len);
+                                      do
+                                      { 
+                                              uart_getTxStatus(&u8Len);
+                                      }
+                                      while(u8Len > 0);
+              #endif
+ 286   2                              if(u8PinState == 0)
+ 287   2                              {                                                             // pressed  -> send learn telegram 
+ 288   3                                      SendLrnTelegram2();
+ 289   3      #ifdef LRN_DEBUG
+                                              u8Len = sprintf(u8Msg, "Sent LrnTelegram\r\n");
+                                              uart_sendBuffer(u8Msg, u8Len);
+                                              do
+                                              { 
+                                                      uart_getTxStatus(&u8Len);
+                                              }
+                                              while(u8Len > 0);
+              
+                                              ///////////////////////
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 6   
+
+                                              DeepSleep(CALIBRATION_BUTTON_SEC, ALLOW_LRN_BTN);
+                                              ///////////////////////
+              #endif
+ 302   3                              }
+ 303   2                              DeepSleep(0, ALLOW_LRN_BTN);                                  // continue sleeping (0)
+ 304   2                              break;
+ 305   2      
+ 306   2                      case VDD_RESET:
+ 307   2                      case PIN_RESET:
+ 308   2      #ifdef LRN_DEBUG
+                                      u8Len = sprintf(u8Msg, "VDD or PIN Reset=%u\r\n", (uint16) u8ResetSrc);
+                                      uart_sendBuffer(u8Msg, u8Len);
+                                      do
+                                      { 
+                                              uart_getTxStatus(&u8Len);
+                                      }
+                                      while(u8Len > 0);
+              #endif
+ 317   2                              DeepSleep(WakeInterval, ALLOW_LRN_BTN);
+ 318   2                              break;
+ 319   2      
+ 320   2                      case WATCHDOG_RESET:
+ 321   2      #ifdef LRN_DEBUG
+                                      u8Len = sprintf(u8Msg, "WAKE_WDG PinState=%u\r\n", (uint16) u8PinState);
+                                      uart_sendBuffer(u8Msg, u8Len);
+                                      do
+                                      { 
+                                              uart_getTxStatus(&u8Len);
+                                      }
+                                      while(u8Len > 0);
+              #endif
+ 330   2                              ForceCalibration = u8PinState == 0;
+ 331   2      
+ 332   2                              if (aRam0.u8CycleMin != unigcfg.u8TCycleMin
+ 333   2                               || aRam0.u8CycleMax != unigcfg.u8TCycleMax)
+ 334   2                              {
+ 335   3                                      aRam0.u8CycleMin = unigcfg.u8TCycleMin;
+ 336   3                                      aRam0.u8CycleMax = unigcfg.u8TCycleMax;
+ 337   3                                      aRam0.u16WakeupCnt = 0;
+ 338   3                              }
+ 339   2      
+ 340   2                              if(aRam0.u8State == S_IDLE)
+ 341   2                              {                                  
+ 342   3                                      aRam0.u16WakeupCnt++;                                       // store multiple of 10mins for calibratio
+             -n
+ 343   3                                      measureChargeLevel(&u8ChargeLevel);
+ 344   3                                      aRam0.u8ChargeLevel = u8ChargeLevel;                        // store value for radio transmission
+ 345   3      
+ 346   3      #if TX_OUTPUT
+                                              do
+                                              {
+                                                      int i;
+                                                      for(i = 0; i < 10; i++)
+                                                      {
+                                                              while(uart_sendBuffer("UZUZUZUZUZUZUZUZUZUZ\r\n", 22) ==  BUFF_FULL)
+                                                                      ;
+                                                              do
+                                                              {
+                                                                      uart_getTxStatus(&u8Len);
+                                                              }
+                                                              while(u8Len != OK);
+                                                      }
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 7   
+
+                                              }
+                                              while(0);
+                                              time_wait(500); // 500ms
+                                              ADJUST_TIMER();
+              #endif
+ 365   3      #ifdef DEBUG
+                                              u8Len = sprintf(u8Msg, "W:%u C:%u V:%u L:%u\r\n",
+                                                      WakeInterval, CalibCount, (uint16)ValidChargeLevel, (uint16) u8ChargeLevel);
+              
+                                              while(uart_sendBuffer(u8Msg, u8Len) ==  BUFF_FULL)
+                                                                      ;
+                                              do
+                                              {
+                                                      uart_getTxStatus(&u8Len);
+                                              }
+                                              while(u8Len != OK);
+              #endif
+ 377   3                                      if (ControlWXODIO != 0 || ValidChargeLevel != 0)
+ 378   3                                      {
+ 379   4                                              // low energy check
+ 380   4                                              if(u8ChargeLevel <= ValidChargeLevel)
+ 381   4                                              {
+ 382   5                                                      // if chargelevel is below 20% stop here and sleep 
+ 383   5                                                      aRam0.u8State = S_IDLE;
+ 384   5                                                      sensorPwrOff();
+ 385   5              
+ 386   5                                                      ////////////////////////////////
+ 387   5                                                      //for(i = 0; i < 7; i++)
+ 388   5                                                      //{
+ 389   5                                                      //      io_setDigital(ADIO_3,(bit1)1);
+ 390   5                                                      //      time_wait(100);
+ 391   5                                                      //      io_setDigital(ADIO_3,(bit1)0);
+ 392   5                                                      //      time_wait(100);
+ 393   5                                                      //}
+ 394   5                                                      ////////////////////////////////
+ 395   5              
+ 396   5                                                      if (ControlWXODIO == 1)
+ 397   5                                                      {
+ 398   6                                                              aRam0.u8LastVOFF = 1;              // mark it to Low // 
+ 399   6                                                              io_init(io_param_sensorOff_VOFF);  // set WXODIO to low //
+ 400   6                                                              mainInit();
+ 401   6                                                      }
+ 402   5                                                      DeepSleep(WakeInterval, ALLOW_LRN_BTN);
+ 403   5                                              }
+ 404   4                                              else if (aRam0.u8LastVOFF)
+ 405   4                                              {
+ 406   5                                                      aRam0.u8LastVOFF = 0;
+ 407   5                                                      io_init(io_param_sensorOff);
+ 408   5                                                      mainInit();
+ 409   5                                              }
+ 410   4                                      }
+ 411   3      
+ 412   3                                      if(aRam0.u8CycleMin != 0 && aRam0.u8CycleMax != 0           // Calibration enabled ?
+ 413   3                                        && aRam0.u16WakeupCnt >= CalibCount || ForceCalibration)  // or Force Calibration needed ?
+ 414   3                                      {
+ 415   4                                          // need to recalibrate
+ 416   4                                              sensorPwrOn();                                          // power up sensor
+ 417   4                                              aRam0.u16WakeupCnt = 0;
+ 418   4                                              // possibly some sanity checks about  u16MinCO2Level should be performed?
+ 419   4                                              u8Len = sprintf(u8Msg, "F %u %u\r\n",
+ 420   4                                                      aRam0.u16MinCO2Level, CalibCleanLevel);  // prepare F command
+ 421   4                                              time_wait(100);
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 8   
+
+ 422   4                                              ADJUST_TIMER();
+ 423   4                                              while(uart_sendBuffer(u8Msg, u8Len) ==  BUFF_FULL)
+ 424   4                                                      ;                          // send F command
+ 425   4                                              do
+ 426   4                                              { 
+ 427   5                                                      uart_getTxStatus(&u8Len);
+ 428   5                                              }
+ 429   4                                              while(u8Len > 0);                                       // wait till send
+ 430   4                                              time_wait(90);                                                                      
+ 431   4                                              sensorPwrOff();                                         // power up sensor
+ 432   4                                              // no error handling implemented here !!!!
+ 433   4      #ifdef DEBUG_CALIB_TELEGRAM
+ 434   4                                              rTel2.raw.bytes[0]      =       0x22;   // Header: Only 32 bit Originator-ID, no extended Header, 4BS telegram
+ 435   4                                              rTel2.raw.bytes[1]      =       0;              // Id   
+ 436   4                                              rTel2.raw.bytes[2]      =       0;              // Id   
+ 437   4                                              rTel2.raw.bytes[3]      =       0;              // Id   
+ 438   4                                              rTel2.raw.bytes[4]      =       0;              // Id
+ 439   4                                              rTel2.raw.bytes[5]      = aRam0.u8ChargeLevel;
+ 440   4                                              rTel2.raw.bytes[6]  = (uint8)(aRam0.u16MinCO2Level / 10); //** Debug Value **//
+ 441   4                                              rTel2.raw.bytes[7]  = 0; //scaleTemperature(s16Temp);
+ 442   4                                              rTel2.raw.bytes[8]  = 0x0F;
+ 443   4                                              rTel2.raw.u8Length      =       10;
+ 444   4      
+ 445   4                                              radio_sendTelegram2(&rTel2, NULL);
+ 446   4      #endif
+ 447   4                                              aRam0.u16MinCO2Level = 1000;
+ 448   4                                              DeepSleep(0, ALLOW_LRN_BTN);
+ 449   4                                      }
+ 450   3                                      else
+ 451   3                                      {
+ 452   4                                              sensorPwrOn();                                          // start measurement
+ 453   4                                              aRam0.u8State = S_MEASURING;
+ 454   4                                              DeepSleep(SENSOR_TIMEOUT, ALLOW_SENSOR);                // LRN button is disabled during measurement
+ 455   4                                      }
+ 456   3                              }
+ 457   2                              else  // (aRam0.u8State != S_IDLE)
+ 458   2                              {                                                         // every 10 mins
+ 459   3                                      sensorPwrOff();                                       // Timeout !!
+ 460   3                                      aRam0.u8State = S_IDLE;
+ 461   3      #ifdef DEBUG
+                                              u8Len = sprintf(u8Msg, "Timeout ? %u\r\n", (uint16) aRam0.u8State);
+                                              uart_sendBuffer(u8Msg, u8Len);
+                                              do
+                                              { 
+                                                      uart_getTxStatus(&u8Len);
+                                              }
+                                              while(u8Len > 0);
+              #endif
+ 470   3      #ifdef SEND_TELEGRAM
+                                              rTel2.raw.bytes[0]      =       0x22;   // Header: Only 32 bit Originator-ID, no extended Header, 4BS telegram
+                                              rTel2.raw.bytes[1]      =       0;              // Id   
+                                              rTel2.raw.bytes[2]      =       0;              // Id   
+                                              rTel2.raw.bytes[3]      =       0;              // Id   
+                                              rTel2.raw.bytes[4]      =       0;              // Id
+                                              rTel2.raw.bytes[5]      = aRam0.u8ChargeLevel;
+                                              rTel2.raw.bytes[6]  = 1; //** Debug Value **//
+                                              rTel2.raw.bytes[7] = scaleTemperature(s16Temp); //** this is original **//
+                                              rTel2.raw.bytes[8] = 0x08|0x02;
+                                              rTel2.raw.u8Length      =       10;
+              
+                                              radio_sendTelegram2(&rTel2, NULL);
+              #endif
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 9   
+
+ 484   3                                      DeepSleep(WakeInterval, ALLOW_LRN_BTN);
+ 485   3                              }
+ 486   2                              break;
+ 487   2      
+ 488   2                      case WAKE_SENSOR:                                             // WAKE0 -> UART activity
+ 489   2                              sensorPwrOn(); // PowerON
+ 490   2                              measureTemperature(&s16Temp);                             // measure temperature as early after powerup
+             -/wakeup as possible to avoid self heating
+ 491   2      #ifdef DEBUG
+                                      u16CO2value = (uint16) 999;
+                                      while(uart_sendBuffer("SensorON\r\n", 10) ==  BUFF_FULL)
+                                              ;
+                                      do
+                                      {
+                                              uart_getTxStatus(&u8Len);
+                                      }
+                                      while(u8Len != OK);
+                                      time_wait(100);
+                                      ADJUST_TIMER();
+              #else
+ 503   2                              parse_uart(&u16CO2value);
+ 504   2      #endif                                         
+ 505   2                              sensorPwrOff();
+ 506   2        
+ 507   2                              if((u16CO2value<aRam0.u16MinCO2Level)&&(u16CO2value!=0))      // CO2 = 0 -> timeout
+ 508   2                                      aRam0.u16MinCO2Level = u16CO2value;                       // store minimum of all CO2 results for cali
+             -bration
+ 509   2              
+ 510   2                              rTel2.raw.bytes[0]      =       0x22;   // Header: Only 32 bit Originator-ID, no extended Header, 4BS telegram
+ 511   2                              rTel2.raw.bytes[1]      =       0;              // Id   
+ 512   2                              rTel2.raw.bytes[2]      =       0;              // Id   
+ 513   2                              rTel2.raw.bytes[3]      =       0;              // Id   
+ 514   2                              rTel2.raw.bytes[4]      =       0;              // Id
+ 515   2      
+ 516   2                              rTel2.raw.bytes[5]      = aRam0.u8ChargeLevel;
+ 517   2      
+ 518   2                              if(u16CO2value > 2550)
+ 519   2                              {
+ 520   3                                      rTel2.raw.bytes[6] = 255;
+ 521   3                              }
+ 522   2                              else
+ 523   2                              {
+ 524   3                                      rTel2.raw.bytes[6] = u16CO2value / 10; //** this is original **//
+ 525   3                                      ////rTel2.raw.bytes[6] = 11;  // test value for CO2
+ 526   3                              }
+ 527   2      
+ 528   2                              rTel2.raw.bytes[7] = scaleTemperature(s16Temp); //** this is original **//
+ 529   2                              ////rTel2.raw.bytes[7] = 22;  // test value for temperatrue
+ 530   2                              rTel2.raw.bytes[8] = 0x08|0x02;
+ 531   2                              rTel2.raw.u8Length      =       10;
+ 532   2      
+ 533   2                              radio_sendTelegram2(&rTel2, NULL);
+ 534   2      
+ 535   2                              aRam0.u8State = S_IDLE;  
+ 536   2                              DeepSleep(WakeInterval, ALLOW_LRN_BTN); 
+ 537   2                              break;
+ 538   2              }
+ 539   1      
+ 540   1              // We should not get here       
+ 541   1              while(1) {io_togDigital(ADIO_3); time_wait(300);};
+ 542   1      }
+ 543          
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 10  
+
+ 544           
+ 545          // ------------------------------------------------------------------
+ 546          // Function:    measureTemperature
+ 547          // Parameters:  none
+ 548          //              
+ 549          //              
+ 550          // Returns:     ps16value  raw value of temperature measurement
+ 551          // Description: enables analog interface for measurement
+ 552          //              measures voltage on T-sensor
+ 553          //              disables analog interface 
+ 554          // ------------------------------------------------------------------
+ 555          void measureTemperature(sint16 *ps16value)  {
+ 556   1      #if 1
+ 557   1              io_enableAnalog(5);                                             // VBG is configured as ADC reference to 
+             -measure the internal temperature sensor analogue signal.
+ 558   1              io_ulpMeasAnalog(VTEMP, RVSS, ps16value);                       // measurements of temperature sensor
+ 559   1              io_enableAnalog(0);
+ 560   1      #else // not worked, Chip temperature sensor calibration is needed
+              #define MEASURE_TIMES 8
+              
+                  sint32  s32TempSum = 0;
+                  sint16  s16TemperatureAD[8];            // Temperature sensor A/D values
+                      uint8 u8i;
+              
+                  // ******** Temperature Internal Sensor Measurement  ********
+                  io_enableAnalog(1);                                                 // activation of analogue measurement
+                                                                          
+                  for(u8i = 0; u8i < MEASURE_TIMES; u8i++)
+                      {
+                              io_ulpMeasAnalog(VTEMP, RVSS,  &s16TemperatureAD[u8i]);     // measurements of temperature sensor, store
+             -d in s16gTemperatureAD[]
+                      }
+              
+                  // *********** Proccessing the informations ****************************
+                  for(u8i = 0; u8i < MEASURE_TIMES; u8i++)                      // The temperature A/D value is sampled 
+             -repeatedly to obtain better precision.
+                  {
+                      s32TempSum += (sint32)(s16TemperatureAD[u8i]);
+                  }
+                  // Divide between 8 to average the 8 temperature measurements.
+                  *ps16value = (sint16) (s32TempSum / MEASURE_TIMES);
+              
+              #undef MEASURE_TIMES
+              #endif
+ 585   1      }
+ 586          // ------------------------------------------------------------------
+ 587          // Function:    scaleTemperature
+ 588          // Parameters:  s16value  raw value of temperature measurement
+ 589          //              
+ 590          //              
+ 591          // Returns:     uint8 result
+ 592          // Description: scales the raw value to an uint8  
+ 593          //              scaling requires calibration values in CFG area
+ 594          // ------------------------------------------------------------------
+ 595          uint8 scaleTemperature(sint16 s16value)  {
+ 596   1        float fTemp;
+ 597   1      
+ 598   1        // T =  Tcal  +  K*(D-Dcal) converts the Temperature A/D value in T[°C]
+ 599   1        fTemp = gModArea.val.f32CalibTemperature  +  gModArea.val.f32TemperatureSlope * (s16value - gModArea.val
+             -.s16CalibADTemperature);
+ 600   1        if(fTemp<0.0)           
+ 601   1          return 0;
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 11  
+
+ 602   1        else if(fTemp>51.0)     
+ 603   1          return 255;
+ 604   1        else                    
+ 605   1          return (uint8)(fTemp/51.0 * 255.0);
+ 606   1      }
+ 607          // ------------------------------------------------------------------
+ 608          // Function:    measureVDD
+ 609          // Parameters:  none
+ 610          //              
+ 611          //              
+ 612          // Returns:     pu16Value  scaled VDD value (10 bit resolution)
+ 613          // Description: enables analog interface for measurement
+ 614          //              measures VDD/4 voltage and returns a scaled VDD
+ 615          //              disables analog interface    
+ 616          // ------------------------------------------------------------------
+ 617          void measureVDD(uint16 *pu16Value)  {
+ 618   1        sint16 s16Ref, s16Value;
+ 619   1      
+ 620   1        io_enableAnalog(1);
+ 621   1        io_ulpMeasAnalog(RVSS, RVDD, &s16Ref);                                   
+ 622   1        io_ulpMeasAnalog(VDD_4, RVSS, &s16Value);                           // measure VDD/4
+ 623   1        io_enableAnalog(0);
+ 624   1        io_ulpScaleAnalog(s16Ref, s16Value, 10, pu16Value);
+ 625   1        *pu16Value <<= 2;                                                   // VDD = 4*VDD_4                    
+             -                              // VDD = 4*VDD_4
+ 626   1      } 
+ 627          // ------------------------------------------------------------------
+ 628          // Function:    measureChargeLevel
+ 629          // Parameters:  none
+ 630          //              
+ 631          //              
+ 632          // Returns:     pu8Level  charge level 0..100% (0..200) 
+ 633          // Description: measures VDD and calculates a charge level 
+ 634          //              the range from 1.8V .. 4.5V  is level 0 .. 100 %
+ 635          //              
+ 636          // ------------------------------------------------------------------
+ 637          // Vdd/1.8V * (2^N-1)   ; N=10
+ 638          #define CAPACITY_0            ((uint16)(2.4/1.8 * 1024))              // = 1365
+ 639          #define CAPACITY_100          (CAPACITY_0 + 1200)                     // ca. 4.5V used 1200 to easy scale 
+             -to 0..100% (see charge level)
+ 640          // ------------------------------------------------------------------
+ 641          void measureChargeLevel(uint8 *pu8Level)  {
+ 642   1        uint16 u16VDD;
+ 643   1        
+ 644   1        measureVDD(&u16VDD);
+ 645   1        if(u16VDD<=CAPACITY_0)            *pu8Level = 0;                     // 0%
+ 646   1        else if (u16VDD>=CAPACITY_100)    *pu8Level = 200;                   // 100%
+ 647   1        else                              *pu8Level = (u16VDD-CAPACITY_0)/6; // range is 1200/6 = 200
+ 648   1      }
+ 649          // ------------------------------------------------------------------
+ 650          // Function:    DeepSleep
+ 651          // Parameters:  u16Sleeptime    time to sleep in s
+ 652          //                              if 0 than current watchdog time is used
+ 653          //              u8WakeSrc       enables wake sources (WAKE0/1)
+ 654          // Returns:     nonthing
+ 655          // Description: sets the watchdog time
+ 656          //              stores the ram0 data
+ 657          //              enters deep sleep mode   
+ 658          // ------------------------------------------------------------------
+ 659          void DeepSleep(uint16 u16Sleeptime, uint8 u8WakeSrc)  {
+ 660   1        uint32 u32WatchdogPeriode;
+ 661   1        uint8 u8Stable;
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 12  
+
+ 662   1      
+ 663   1        if(u16Sleeptime!=0)  {
+ 664   2          u32WatchdogPeriode = (uint32)((uint32)CONV_TIME_TO_COUNTER(u16Sleeptime, SEC,WATCHDOG_CLK)*gModArea.va
+             -l.u16CalibWatchdog)/WATCHDOG_CALIB_CONST;
+ 665   2          pwr_setSleepTimer(WATCHDOG_TIMER, u32WatchdogPeriode,0);
+ 666   2        }
+ 667   1      
+ 668   1        ram0Write();                                                        // use the waiting time to store dat
+             -a to ram0
+ 669   1      
+ 670   1        do 
+ 671   1          pwr_getSleepTimerStable(WATCHDOG_TIMER, &u8Stable);  
+ 672   1        while (u8Stable == FALSE);                                          // wait till shortterm timer runs st
+             -able and all registers are captured
+ 673   1        pwr_timerSleep(u8WakeSrc, NULL);                                    // enable wakeup on WAKE0/1 and slee
+             -p
+ 674   1      }
+ 675          
+ 676          // ------------------------------------------------------------------
+ 677          // Function:    parse_uart
+ 678          // Parameters:  none
+ 679          //              
+ 680          //              
+ 681          // Returns:     pu16Value   CO2 level 
+ 682          //              0           in case of timeout (counter based)
+ 683          // Description: parses the byte stream received from the sensor and
+ 684          //              extracts CO2 level
+ 685          //              Important the uart has to be enabled during the STOP 
+ 686          //              bit of the first space char. 
+ 687          //
+ 688          //              sensor sends 
+ 689          //               Z 00880 ....
+ 690          //              xxxxxxxxx
+ 691          //              252333332
+ 692          //              0A0008800  
+ 693          // ------------------------------------------------------------------
+ 694          void parse_uart(uint16 *pu16Value)  {
+ 695   1        uint8 u8State;
+ 696   1        uint8 u8Byte;
+ 697   1        uint8 u8Buf[10];
+ 698   1        uint16 i;
+ 699   1        uint8 j;
+ 700   1      
+ 701   1        i=0; j=0;
+ 702   1        *pu16Value = 0;
+ 703   1        u8State = 0;      
+ 704   1        do {
+ 705   2          switch(u8State)  {
+ 706   3            case 0:                                                         // find sync
+ 707   3                if(uart_getByte(&u8Byte)==OK)  { 
+ 708   4                  u8Buf[j++] = u8Byte;
+ 709   4                  if(u8Byte=='Z')  u8State = 1;
+ 710   4                }
+ 711   3                break;
+ 712   3            case 1:                                                         // ignore space
+ 713   3              if(uart_getByte(&u8Byte)==OK)  {
+ 714   4                u8State = 2;
+ 715   4                u8Buf[j++] = u8Byte;
+ 716   4              }
+ 717   3              break;
+ 718   3            case 2:
+ 719   3            case 3:
+C51 COMPILER V9.05   MAIN                                                                  08/07/2014 16:21:17 PAGE 13  
+
+ 720   3            case 4:
+ 721   3            case 5:
+ 722   3            case 6:
+ 723   3              if(uart_getByte(&u8Byte)==OK)  {
+ 724   4                *pu16Value = *pu16Value * 10+(u8Byte-'0');                  // error handling???
+ 725   4                u8State++;
+ 726   4                u8Buf[j++] = u8Byte;
+ 727   4              }
+ 728   3              break;
+ 729   3            case 7:
+ 730   3              i = CO2TIMEOUT+1;                                                     // force exit
+ 731   3              continue;
+ 732   3              break;
+ 733   3          }
+ 734   2          if(j>=sizeof(u8Buf)) j = sizeof(u8Buf)-1;
+ 735   2      
+ 736   2        } while(i++<=CO2TIMEOUT);
+ 737   1      
+ 738   1        if(i==CO2TIMEOUT)  *pu16Value = 0;                                        // timeout
+ 739   1      
+ 740   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1834    ----
+   CONSTANT SIZE    =     95    ----
+   XDATA SIZE       =   ----     146
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
