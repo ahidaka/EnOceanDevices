@@ -1,9 +1,0 @@
-".\Output\EO3100I_CFG.obj",
-".\Output\main.obj",
-".\Output\STARTUP.obj",
-".\Output\LRNtelegram.obj",
-".\Output\ram0.obj",
-"..\..\EO3100I_LIB\EO3100I_API-ERP2.LIB" 
-TO ".\Output\LithiumCO2" 
-PRINT(".\Output\LithiumCO2.m51") RAMSIZE(256) 
-DISABLEWARNING (15,16) 
